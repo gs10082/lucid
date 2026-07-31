@@ -93,7 +93,18 @@ body {
 		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
 
-	</head>
+	<style id="lucid-loading-style">
+#status { background: #000; visibility: visible; }
+#status-splash { display: none; }
+#lucid-loading { width: min(58vw, 300px); display: flex; flex-direction: column; align-items: center; }
+#lucid-loading-track { width: 100%; height: 8px; background: #160608; border: 1px solid #9e222b; overflow: hidden; }
+#status-progress { display: block !important; position: static; width: 100%; height: 12px; margin: 0; appearance: none; border: 0; background: transparent; }
+#status-progress::-webkit-progress-bar { background: transparent; }
+#status-progress::-webkit-progress-value { background: #dc3842; }
+#status-progress::-moz-progress-bar { background: #dc3842; }
+#status-notice { position: static; display: none; max-width: 90vw; margin: 0; font-size: 12px; }
+</style>
+</head>
 	<body>
 		<canvas id="canvas">
 			Your browser does not support the canvas tag.
@@ -104,69 +115,43 @@ body {
 		</noscript>
 
 		<div id="status">
-			<img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="index.png" alt="">
-			<progress id="status-progress"></progress>
-			<div id="status-notice"></div>
-		</div>
-
-		<script id="split-asset-loader">
+	<div id="lucid-loading">
+		<div id="lucid-loading-track"><progress id="status-progress"></progress></div>
+		<div id="status-notice"></div>
+	</div>
+</div><script id="split-asset-loader">
 (() => {
-	const splitFiles = {
-	"index.pck": [
-		"index.pck.part0",
-		"index.pck.part1",
-		"index.pck.part2"
-	],
-	"index.wasm": [
-		"index.wasm.part0",
-		"index.wasm.part1"
-	]
-};
-	const mimeTypes = {
-		"index.pck": "application/octet-stream",
-		"index.wasm": "application/wasm",
-	};
+	const splitFiles = { "index.pck": ["index.pck.part0","index.pck.part1","index.pck.part2"], "index.wasm": ["index.wasm.part0","index.wasm.part1"] };
+	const mimeTypes = { "index.pck": "application/octet-stream", "index.wasm": "application/wasm" };
 	const nativeFetch = window.fetch.bind(window);
-
 	window.fetch = async function(resource, init) {
-		const requestUrl = typeof resource === "string" ? resource : (resource && resource.url ? resource.url : "");
+		const requestUrl = typeof resource === 'string' ? resource : (resource && resource.url ? resource.url : '');
 		const normalizedUrl = requestUrl ? new URL(requestUrl, window.location.href) : null;
-		const fileName = normalizedUrl ? normalizedUrl.pathname.split("/").pop() : "";
+		const fileName = normalizedUrl ? normalizedUrl.pathname.split('/').pop() : '';
 		const partNames = splitFiles[fileName];
 		if (!partNames) {
 			return nativeFetch(resource, init);
 		}
-
-		const baseUrl = new URL(".", normalizedUrl.href);
+		const baseUrl = new URL('.', normalizedUrl.href);
 		const responses = await Promise.all(partNames.map((partName) => nativeFetch(new URL(partName, baseUrl).href, init)));
 		for (const response of responses) {
-			if (!response.ok) {
-				return response;
-			}
+			if (!response.ok) return response;
 		}
 		const buffers = await Promise.all(responses.map((response) => response.arrayBuffer()));
 		const totalLength = buffers.reduce((total, buffer) => total + buffer.byteLength, 0);
 		const merged = new Uint8Array(totalLength);
-		let offset = 0;
+		let cursor = 0;
 		for (const buffer of buffers) {
-			const view = new Uint8Array(buffer);
-			merged.set(view, offset);
-			offset += view.byteLength;
+			merged.set(new Uint8Array(buffer), cursor);
+			cursor += buffer.byteLength;
 		}
-		return new Response(merged.buffer, {
-			status: 200,
-			statusText: "OK",
-			headers: {
-				"Content-Type": mimeTypes[fileName],
-				"Content-Length": String(totalLength),
-			},
-		});
+		return new Response(merged.buffer, { status: 200, statusText: 'OK', headers: { 'Content-Type': mimeTypes[fileName], 'Content-Length': String(totalLength) } });
 	};
 })();
-		</script>
+</script>
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":64872448,"index.wasm":39509339},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":64872560,"index.wasm":39509339},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
@@ -272,3 +257,4 @@ const engine = new Engine(GODOT_CONFIG);
 		</script>
 	</body>
 </html>
+
