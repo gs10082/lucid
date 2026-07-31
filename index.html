@@ -122,6 +122,10 @@ body {
 		"index.wasm.part1"
 	]
 };
+	const mimeTypes = {
+		"index.pck": "application/octet-stream",
+		"index.wasm": "application/wasm",
+	};
 	const nativeFetch = window.fetch.bind(window);
 
 	window.fetch = async function(resource, init) {
@@ -268,4 +272,3 @@ const engine = new Engine(GODOT_CONFIG);
 		</script>
 	</body>
 </html>
-
